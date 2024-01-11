@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Storage Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+
+#map {
+            height: 400px;
+            width: 80%;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        form {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            margin: 10px 0;
+            font-weight: bold;
+            width: 100%;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 20px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #map {
+            height: 400px;
+        }
+        
+
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button onclick="addMarker()">Add Marker</button>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Load markers from local storage
+        const savedMarkers = JSON.parse(localStorage.getItem('markers')) || [];
+
+        // Add saved markers to the map
+        savedMarkers.forEach(marker => {
+            const { lat, lng, name, contacts } = marker;
+            const newMarker = L.marker([lat, lng]).addTo(map);
+            const popupContent = generatePopupContent(name, lat, lng, contacts);
+            newMarker.bindPopup(popupContent).openPopup();
+        });
+
+        function generatePopupContent(markerName, lat, lng, contacts) {
+            let content = `Marker: ${markerName}<br>Latitude: ${lat}<br>Longitude: ${lng}`;
+
+            if (contacts && contacts.length > 0) {
+                content += '<br><br>Contact Details:<ul>';
+                contacts.forEach(contact => {
+                    content += `<li>Name: ${contact.name}, Phone: ${contact.phone}, Details: ${contact.details || ''}</li>`;
+                });
+                content += '</ul>';
+            }
+
+            return content;
+        }
+
+        function addMarker() {
+            const lat = prompt('Enter Latitude:');
+            const lng = prompt('Enter Longitude:');
+            const markerName = prompt('Enter Marker Name:');
+
+            if (!lat || !lng || !markerName) {
+                alert('Please enter valid data for latitude, longitude, and marker name.');
+                return;
+            }
+
+            const contacts = [];
+            let addContact = confirm('Do you want to add contact details?');
+
+            while (addContact) {
+                const contactName = prompt('Enter Contact Name:');
+                const contactPhone = prompt('Enter Contact Phone:');
+                const contactDetails = prompt('Enter Contact Details (optional):');
+
+                contacts.push({ name: contactName, phone: contactPhone, details: contactDetails || '' });
+
+                addContact = confirm('Do you want to add another contact?');
+            }
+
+            const marker = L.marker([lat, lng]).addTo(map);
+            const popupContent = generatePopupContent(markerName, lat, lng, contacts);
+            marker.bindPopup(popupContent).openPopup();
+
+            // Save marker to local storage
+            savedMarkers.push({ lat, lng, name: markerName, contacts });
+            localStorage.setItem('markers', JSON.stringify(savedMarkers));
+
+            console.log(`Marker: ${markerName}, Latitude: ${lat}, Longitude: ${lng}, Contacts:`, contacts);
+        }
+    </script>
+</body>
+</html>
